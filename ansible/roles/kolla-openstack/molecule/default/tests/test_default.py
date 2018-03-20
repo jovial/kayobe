@@ -44,6 +44,7 @@ def test_service_config_directory(host, path):
      'grafana',
      'heat',
      'horizon',
+     'influxdb',
      'ironic',
      'magnum',
      'manila',
