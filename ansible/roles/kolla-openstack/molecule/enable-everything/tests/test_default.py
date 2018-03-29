@@ -42,6 +42,7 @@ testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
      'keystone',
      'magnum',
      'manila',
+     'monasca',
      'murano',
      'neutron',
      'nova',
