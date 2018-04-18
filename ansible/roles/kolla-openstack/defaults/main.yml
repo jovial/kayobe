@@ -243,12 +243,6 @@ kolla_extra_inspector:
 ###############################################################################
 # Ironic inspector dnsmasq configuration.
 
-# Start of range of IP addresses for dnsmasq to allocate from.
-kolla_inspector_dhcp_pool_start:
-
-# End of range of IP addresses for dnsmasq to allocate from.
-kolla_inspector_dhcp_pool_end:
-
 # IP address of default gateway to advertise via DHCP.
 kolla_inspector_default_gateway:
 
