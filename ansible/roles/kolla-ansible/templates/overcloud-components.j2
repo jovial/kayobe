@@ -37,6 +37,9 @@ compute
 [influxdb:children]
 monitoring
 
+[prometheus:children]
+monitoring
+
 [kafka:children]
 control
 
@@ -241,6 +244,9 @@ control
 
 [bifrost:children]
 deployment
+
+[zookeeper:children]
+control
 
 [zun:children]
 control
