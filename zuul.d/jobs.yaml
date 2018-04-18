@@ -24,7 +24,7 @@
     timeout: 3600
     required-projects:
       - name: openstack/requirements
-        override-checkout: stable/queens
+        override-checkout: stable/rocky
     vars:
       tox_envlist: molecule
 
@@ -42,11 +42,11 @@
     required-projects:
       - name: openstack/kayobe-config-dev
       - name: openstack/kolla
-        override-checkout: stable/queens
+        override-checkout: stable/rocky
       - name: openstack/kolla-ansible
-        override-checkout: stable/queens
+        override-checkout: stable/rocky
       - name: openstack/requirements
-        override-checkout: stable/queens
+        override-checkout: stable/rocky
     irrelevant-files:
       - ^.*\.rst$
       - ^doc/.*
@@ -70,11 +70,11 @@
     required-projects:
       - name: openstack/kayobe-config-dev
       - name: openstack/kolla
-        override-checkout: stable/queens
+        override-checkout: stable/rocky
       - name: openstack/kolla-ansible
-        override-checkout: stable/queens
+        override-checkout: stable/rocky
       - name: openstack/requirements
-        override-checkout: stable/queens
+        override-checkout: stable/rocky
     irrelevant-files:
       - ^.*\.rst$
       - ^doc/.*
