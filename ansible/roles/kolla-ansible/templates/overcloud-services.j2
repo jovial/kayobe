@@ -67,10 +67,10 @@ neutron
 [neutron-metadata-agent:children]
 neutron
 
-[neutron-bgp-dragent:children]
+[neutron-vpnaas-agent:children]
 neutron
 
-[neutron-infoblox-ipam-agent:children]
+[neutron-bgp-dragent:children]
 neutron
 
 # Ceph
@@ -116,14 +116,11 @@ cloudkitty
 [freezer-api:children]
 freezer
 
-[freezer-scheduler:children]
-freezer
-
 # iSCSI
 [iscsid:children]
 compute
 storage
-ironic
+ironic-conductor
 
 [tgtd:children]
 storage
@@ -427,17 +424,3 @@ blazar
 
 [blazar-manager:children]
 blazar
-
-# Prometheus
-[prometheus-node-exporter:children]
-monitoring
-control
-compute
-network
-storage
-
-[prometheus-mysqld-exporter:children]
-mariadb
-
-[prometheus-haproxy-exporter:children]
-haproxy
