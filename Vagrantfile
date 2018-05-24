@@ -4,19 +4,30 @@
 Vagrant.configure('2') do |config|
   config.vm.hostname = 'controller1'
 
-  config.vm.network 'private_network', ip: '192.168.33.3', auto_config: false
+  config.vm.network 'private_network', ip: '192.168.33.3'
 
-  config.vm.box = 'stackhpc/centos-7'
+  config.vm.box = 'centos/7'
 
   config.vm.provider 'virtualbox' do |vb|
-    vb.memory = '4096'
+    vb.memory = '12000'
     vb.linked_clone = true
+    vb.cpus = "4"
   end
 
   config.vm.provider 'vmware_fusion' do |vmware|
     vmware.vmx['memsize'] = '4096'
     vmware.vmx['vhv.enable'] = 'TRUE'
     vmware.linked_clone = true
+  end
+
+  config.vm.provider :libvirt do |domain|
+    domain.uri = 'qemu+unix:///system'
+    domain.driver = 'kvm'
+    domain.memory = 12000
+    domain.cpus = 4
+    domain.nested = true
+    domain.cpu_mode = 'host-model'
+    config.vm.synced_folder './', '/vagrant', type: 'nfs', nfs_version: "3", "nfs_udp": false
   end
 
   config.vm.provision 'shell', inline: <<-SHELL
@@ -31,17 +42,21 @@ EOF" | sudo -s
   #   vagrant plugin install vagrant-reload
   config.vm.provision :reload
 
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo yum group install "Development Tools" -y
+  SHELL
+
   config.vm.provision 'shell', privileged: false, inline: <<-SHELL
-    cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-eth1
-DEVICE=eth1
-USERCTL=no
-BOOTPROTO=none
-IPADDR=192.168.33.3
-NETMASK=255.255.255.0
-ONBOOT=yes
-NM_CONTROLLED=no
-EOF
-    sudo ifup eth1
+#    cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-eth1
+#DEVICE=eth1
+#USERCTL=no
+#BOOTPROTO=none
+#IPADDR=192.168.121.3
+#NETMASK=255.255.255.0
+#ONBOOT=yes
+#NM_CONTROLLED=no
+#EOF
+#    sudo ifup eth1
 
     /vagrant/dev/install.sh
 
