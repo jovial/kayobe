@@ -1,0 +1,87 @@
+---
+- name: set up mitmproxy
+  hosts: all
+  tasks:
+    - name: enable epel
+      yum:
+        name: epel-release
+        state: installed
+      become: True
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: installed
+      loop:
+#        - docker
+#        - python-docker-py
+        - python-virtualenv
+        - python36
+      become: True
+# docker didnt work due to NAT - could use macvlan driver 
+#    - name: enable docker
+#      service:
+#        name: docker
+#        state: started
+#        enabled: yes
+#      become: True
+#    - name: "add user to docker group"
+#      user: name="{{ansible_user}}" groups=docker append=yes
+#      become: true
+#    - name: reset ssh connection to allow user changes to affect 'current login user'
+#      meta: reset_connection
+#    - name: pull mitm docker image 
+#      docker_image:
+#        name: mitmproxy/mitmproxy
+#      become: True
+
+#    - name: deploy mitmproxy container
+#      docker_container:
+#        name: mitmproxy
+#        image: mitmproxy/mitmproxy:latest
+#        ports:
+#          - "8080:8080"
+#          - "8081:8081"
+#        command: mitmdump --mode transparent -v
+        #--web-iface 0.0.0.0
+#        restart_policy: always
+#      become: True
+    - name: setup sysctl for proxying 
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl_set: yes
+        state: present
+        reload: yes
+      loop:
+        - { name: 'net.ipv4.ip_forward', value: 1}
+        - { name: 'net.ipv6.conf.all.forwarding', value: 1}
+        - { name: 'net.ipv4.conf.all.send_redirects', value: 0}
+      become: True
+    - name: setup iptables
+      iptables:
+        table: nat
+        chain: PREROUTING
+        in_interface: eth1
+        protocol: tcp
+        match: tcp
+        destination_port: "{{ item }}"
+        jump: REDIRECT
+        to_ports: 8080
+        comment: Redirect web traffic to port 8080
+      loop:
+        - 80
+        - 443
+      become: yes
+    - name: Install requirements
+      pip: 
+        name: mitmproxy
+        virtualenv: "{{ ansible_env.HOME }}/venvs/mitmproxy"
+        virtualenv_python: python3.6
+  handlers:
+    - name: "docker-restart"
+      service:
+        name: docker
+        state: restarted
+      become: True
+
+
