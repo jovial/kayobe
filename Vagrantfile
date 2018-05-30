@@ -56,7 +56,7 @@ Vagrant.configure('2') do |config|
   default.vm.provider :libvirt do |domain|
     domain.uri = 'qemu+unix:///system'
     domain.driver = 'kvm'
-    domain.memory = 4096
+    domain.memory = 8192
     domain.cpus = 4
     domain.nested = true
     domain.cpu_mode = 'host-model'

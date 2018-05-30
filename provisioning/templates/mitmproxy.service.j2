@@ -1,0 +1,12 @@
+[Unit]
+Description=Runs mitmdump
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+ExecStart={{ mitmproxy_venv }}/bin/mitmdump --mode transparent --ssl-insecure -s {{ mitmproxy_dump_script_path }} --showhost --set stream_large_bodies=10m
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

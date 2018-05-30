@@ -1,0 +1,6 @@
+import itertools
+
+def response(flow):
+    with open("{{ mitmproxy_log }}", "a+") as ofile:
+        agent = "".join(itertools.takewhile(lambda x: x != " ", flow.request.headers["user-agent"]))
+        print(flow.request.method + " " + flow.request.pretty_url + " " + flow.request.http_version + " " + agent, file=ofile)

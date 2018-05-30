@@ -1,6 +1,10 @@
 ---
 - name: set up mitmproxy
   hosts: all
+  vars:
+    mitmproxy_dump_script_path: "{{ ansible_env.HOME }}/dump.py"
+    mitmproxy_venv: "{{ ansible_env.HOME }}/venvs/mitmproxy"
+    mitmproxy_log: "{{ ansible_env.HOME }}/mitmdump.log"
   tasks:
     - name: enable epel
       yum:
@@ -72,11 +76,36 @@
         - 80
         - 443
       become: yes
+    - name: iptables - nat rest of traffic
+      iptables:
+        table: nat
+        chain: POSTROUTING 
+        out_interface: eth0
+        jump: MASQUERADE
+      become: yes
     - name: Install requirements
       pip: 
         name: mitmproxy
-        virtualenv: "{{ ansible_env.HOME }}/venvs/mitmproxy"
+        virtualenv: "{{ mitmproxy_venv }}"
         virtualenv_python: python3.6
+    - name: install mitmproxy dump script
+      template:
+        src: templates/dump.py.j2
+        dest: "{{ mitmproxy_dump_script_path }}"
+    - name: install mitmproxy service file
+      template:
+        src: templates/mitmproxy.service.j2
+        dest: /etc/systemd/system/mitmproxy.service
+        owner: root
+        group: root
+        mode: 0644
+      become: True
+    - name: enable and start mitmproxy
+      service:
+        name: mitmproxy
+        enabled: yes
+        state: started
+      become: True
   handlers:
     - name: "docker-restart"
       service:
