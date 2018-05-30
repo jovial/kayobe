@@ -96,7 +96,8 @@ EOF" | sudo -s
 #NM_CONTROLLED=no
 #EOF
 #    sudo ifup eth1
-
+    # PIP Doesn't use system wide trsuted certificates
+    export PIP_CERT=/etc/pki/ca-trust/source/anchors/mitmproxy.pem
     /vagrant/dev/install.sh
 
     # Configure the legacy development environment. This has been retained
