@@ -1,0 +1,47 @@
+---
+# This playbook will ensure that all baremetal compute nodes are named after
+# their inventory host names. It matches the ipmi address in the inventory to
+# the one gathered from inspection
+
+- name: Rename baremetal compute nodes
+  hosts: controllers[0]
+  gather_facts: False
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+  pre_tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-openstackclient
+          - python-ironicclient
+  roles:
+    - role: activate-virtualenv
+      activate_virtualenv_path: "{{ venv }}"
+
+- name: Rename baremetal compute nodes
+  hosts: baremetal-compute
+  gather_facts: False
+  connection: "{{ groups['controllers'][0] }}"
+  pre_tasks:
+    - name: Get list of nodes
+      command: openstack baremetal node list -f json --fields uuid name driver_info
+      register: nodes
+      environment: "{{ openstack_auth_env }}"
+      connection: local
+      run_once: true
+  vars:
+    ipmi_address: "{{ hostvars[inventory_hostname].ipmi_address }}"
+    node: "{{ (nodes.stdout | from_json) | selectattr('Driver Info.ipmi_address', 'equalto', ipmi_address) | first }}"
+  tasks:
+    - name: Rename baremetal compute nodes
+      command: openstack baremetal node set --name "{{ inventory_hostname }}" "{{ node['UUID'] }}"
+      environment: "{{ openstack_auth_env }}"
+      connection: local
+      when: node['Name'] != inventory_hostname
+
+- name: Rename baremetal compute nodes
+  hosts: controllers[0]
+  gather_facts: False
+  roles:
+    - role: deactivate-virtualenv
