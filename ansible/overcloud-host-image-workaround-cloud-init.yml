@@ -27,8 +27,7 @@
             src: templates/cloud-init-upstream.repo.j2
             dest: /tmp/cloud-init-upstream.repo
         - name: Copy cloud init repo into docker container
-          command: >
-            docker cp /tmp/cloud-init-upstream.repo bifrost_deploy:/tmp/cloud-init-upstream.repo
+          command: docker cp /tmp/cloud-init-upstream.repo bifrost_deploy:/tmp/cloud-init-upstream.repo
         - name: Install custom repo
           command: >
             docker exec bifrost_deploy
