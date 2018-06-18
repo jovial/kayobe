@@ -37,7 +37,7 @@
             --connection local
             --become
             -m command
-            -a "virt-customize -a /httpboot/deployment_image.qcow2 --upload /tmp/cloud-init-upstream.repo:/etc/yum.repos.d/"
+            -a "virt-customize -a /httpboot/deployment_image.qcow2 --upload /tmp/cloud-init-upstream.repo:/etc/yum.repos.d/"'
         - name: upgrade cloud init
           command: >
             docker exec bifrost_deploy
@@ -47,5 +47,5 @@
             --connection local
             --become
             -m command
-            -a "virt-customize -a /httpboot/deployment_image.qcow2 --install cloud-init"
+            -a "virt-customize -a /httpboot/deployment_image.qcow2 --install cloud-init"'
       when: True
