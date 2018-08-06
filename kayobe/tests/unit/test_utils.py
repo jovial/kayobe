@@ -123,3 +123,14 @@ key2: value2
 
     def test_quote_and_escape_non_string(self):
         self.assertEqual(True, utils.quote_and_escape(True))
+
+    def test_escape_jinja(self):
+        value = "string to escape"
+        expected = "{% raw %}" + value + "{% endraw %}"
+        self.assertEqual(expected, utils.escape_jinja(value))
+
+    def test_escape_jinja_templated_variable(self):
+        # jinja templates within the string should remain intact
+        value = "this is {{ test_var }} in a string"
+        expected = "{% raw %}" + value + "{% endraw %}"
+        self.assertEqual(expected, utils.escape_jinja(value))

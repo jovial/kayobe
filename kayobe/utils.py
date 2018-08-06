@@ -165,3 +165,12 @@ def quote_and_escape(value):
     if not isinstance(value, six.string_types):
         return value
     return "'" + value.replace("'", "'\\''") + "'"
+
+
+def escape_jinja(string):
+    """Wraps a string in jinja raw tags.
+
+    :param string: the string to escape
+    :return: the escaped string
+    """
+    return ''.join(('{% raw %}', string, '{% endraw %}'))
