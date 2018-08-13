@@ -1,0 +1,24 @@
+---
+# This playbook will ensure that all baremetal compute nodes are named after
+# their inventory host names. It matches the ipmi address in the inventory to
+# the one gathered from inspection
+
+
+- import_playbook: baremetal-compute-common.yml
+
+- name: start introspection
+  hosts: baremetal-compute
+  gather_facts: False
+  vars:
+    venv: "{{ baremetal_compute_openstack_cli_venv_path }}"
+    controller_host: "{{ groups['controllers'][0] }}"
+  tasks:
+    - name: Start introspection
+      command: >
+        {{ venv }}/bin/openstack baremetal introspection start "{{ inventory_hostname }}"
+      delegate_to: "{{ controller_host }}"
+      environment: "{{ openstack_auth_env }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"

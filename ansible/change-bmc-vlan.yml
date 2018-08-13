@@ -1,0 +1,19 @@
+
+- name: Change bmc vlan
+  hosts: "{{ bmc_target_hosts }}"
+  gather_facts: False
+  vars:
+    controller_host: "{{ groups['controllers'][0] }}"
+  tasks:
+    - name: Change bmc vlan
+      include: change-bmc-vlan-tasks.yml
+      delegate_to: "{{ controller_host }}"
+      changed_when: false
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+        ipmitool_target: "{{ hostvars[inventory_hostname].ipmi_address }}"
+        ipmitool_target_vlan: 68
+        ipmitool_user: "{{ secrets_ipmi_username }}"
+        ipmitool_pass: "{{ secrets_ipmi_password }}"

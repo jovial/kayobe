@@ -1,0 +1,29 @@
+---
+# This playbook will ensure that all baremetal compute nodes are named after
+# their inventory host names. It matches the ipmi address in the inventory to
+# the one gathered from inspection
+
+- name: baremetal compute common
+  hosts: baremetal-compute
+  gather_facts: False
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+  pre_tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-openstackclient
+          - python-ironicclient
+          - python-ironic-inspector-client
+      run_once: True
+      delegate_to: "{{ controller_host }}"
+      vars:
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+  tasks:
+    - name: Set fact containing virtualenv path
+      set_fact:
+        baremetal_compute_openstack_cli_venv_path: "{{ venv }}"
+      run_once: True
+

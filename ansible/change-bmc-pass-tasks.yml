@@ -1,0 +1,14 @@
+---
+- name: Disable password check feature (Dell c2660)
+  command: >
+    ipmitool -U "{{ ipmitool_user }}" -P "{{ ipmitool_old_pass }}"
+    -H "{{ ipmitool_target }}" -I lanplus
+    raw 0x30 0x51 0x00
+  delegate_to: "{{ controller_host }}"
+
+- name: Change password
+  command: >
+    ipmitool -U "{{ ipmitool_user }}" -P "{{ ipmitool_old_pass }}"
+    -H "{{ ipmitool_target }}" -I lanplus
+    user set password 2 "{{ ipmitool_new_pass }}"
+

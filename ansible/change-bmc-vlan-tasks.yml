@@ -1,0 +1,13 @@
+---
+- name: Set BMC vlan
+  command: >
+    ipmitool -U "{{ ipmitool_user }}" -P "{{ ipmitool_pass }}"
+    -H "{{ ipmitool_target }}" -I lanplus lan set 1 vlan id
+    "{{ ipmitool_target_vlan }}"
+  delegate_to: "{{ controller_host }}"
+
+#- name: Warm reset BMC
+#  command: >
+#    echo ipmitool -U "{{ ipmitool_user }}" -P "{{ ipmitool_pass }}"
+#    -H "{{ ipmitool_target }}" -I lanplus mc reset warm
+
