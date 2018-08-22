@@ -37,6 +37,10 @@ ipa_images_ramdisk_name:
 # image in ipa_images_cache_path will be used.
 ipa_images_ramdisk_url:
 
-# List of ironic bare metal nodes to which to limit updating driver info
-# fields.
-ipa_images_compute_node_limit:
+# Ansible host pattern for limiting which nodes are updated with deploy_ramdisk
+# and deploy_kernel properties
+ipa_images_compute_node_limit: baremetal-compute
+
+# Whether or not to update the deploy_ramdisk and deploy_kernel Ironic node
+# properties
+ipa_images_update_ironic_nodes: False
