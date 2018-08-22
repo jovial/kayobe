@@ -12,7 +12,13 @@ ipa_images_openstack_auth: {}
 
 # Authentication parameters in environment variable form, as accepted by the
 # openstack client.
-ipa_images_openstack_auth_env: {}
+ipa_images_openstack_auth_env:
+  OS_PROJECT_NAME: "{{ ipa_images_openstack_auth.project_name | default(omit) }}"
+  OS_USERNAME: "{{ ipa_images_openstack_auth.username | default(omit) }}"
+  OS_PASSWORD: "{{ ipa_images_openstack_auth.password | default(omit) }}"
+  OS_AUTH_URL: "{{ ipa_images_openstack_auth.auth_url | default(omit) }}"
+  OS_AUTH_PLUGIN: "{{ ipa_images_openstack_auth_type | default(omit, True) }}"
+  OS_IDENTITY_API_VERSION: "{{ ipa_images_openstack_auth.api_version | default(3) }}"
 
 # Path to directory in which to store downloaded images.
 ipa_images_cache_path:
