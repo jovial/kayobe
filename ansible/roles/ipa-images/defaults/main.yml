@@ -39,4 +39,4 @@ ipa_images_ramdisk_url:
 
 # List of ironic bare metal nodes to which to limit updating driver info
 # fields.
-ipa_images_compute_node_limit: []
+ipa_images_compute_node_limit:
