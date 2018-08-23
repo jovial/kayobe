@@ -11,7 +11,9 @@
   add_host:
     name: "{{ item.Name }}"
     groups: baremetal-compute
-  when: item.Name not in groups["baremetal-compute"]
+  when:
+    - item.Name is not none
+    - item.Name not in groups["baremetal-compute"]
   with_items: "{{ ipa_images_ironic_node_list.stdout | from_json }}"
 
 - name: Set fact containing filtered list of nodes

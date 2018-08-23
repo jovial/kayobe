@@ -40,7 +40,7 @@
     - path: "{{ ipa_images_cache_path }}/{{ ipa_images_ramdisk_name }}"
       exists: "{{ ipa_images_checksum.results[1].stat.exists | bool }}"
   when:
-    - not item.path
+    - not item.exists
 
 - name: Activate the virtualenv
   include_role:
