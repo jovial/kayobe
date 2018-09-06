@@ -14,12 +14,8 @@ switch_dell_powerconnect_provider:
 ###############################################################################
 # Configuration options.
 
-# Whether or not to enter privilege exec mode. Check your switch
-# manual to determine if you need this.
-switch_dell_powerconnect_enable_privilege_exec: false
-
 # This controls <port type> in commands of the form: interface <port type> <port>
 # This is free form. Examples include "ethernet", "gigabitethernet", etc.
-switch_dell_powerconnect_port_type:
+switch_dell_powerconnect_interface_type:
 
 ###############################################################################
