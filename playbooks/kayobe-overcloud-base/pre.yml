@@ -4,6 +4,7 @@
     logs_dir: "/tmp/logs"
     kayobe_src_dir: "{{ ansible_env.PWD ~ '/' ~ zuul.projects['git.openstack.org/openstack/kayobe'].src_dir }}"
     kayobe_config_src_dir: "{{ ansible_env.PWD ~ '/' ~ zuul.projects['git.openstack.org/openstack/kayobe-config-dev'].src_dir }}"
+    tenks_src_dir: "{{ ansible_env.PWD ~ '/' ~ zuul.projects['git.openstack.org/openstack/tenks'].src_dir }}"
   environment:
     KAYOBE_CONFIG_SOURCE_PATH: "{{ kayobe_config_src_dir }}"
   roles:
@@ -61,4 +62,9 @@
     - name: Ensure kayobe is installed
       shell:
         cmd: dev/install.sh > {{ logs_dir }}/ansible/install
+        chdir: "{{ kayobe_src_dir }}"
+
+    - name: Configure the firewall
+      shell:
+        cmd: dev/configure-firewall.sh
         chdir: "{{ kayobe_src_dir }}"

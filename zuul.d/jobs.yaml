@@ -47,6 +47,7 @@
         override-checkout: stable/rocky
       - name: openstack/requirements
         override-checkout: stable/rocky
+      - name: openstack/tenks
     irrelevant-files:
       - ^.*\.rst$
       - ^doc/.*
