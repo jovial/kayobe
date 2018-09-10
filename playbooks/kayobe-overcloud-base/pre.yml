@@ -4,6 +4,8 @@
     logs_dir: "/tmp/logs"
     kayobe_src_dir: "{{ ansible_env.PWD ~ '/' ~ zuul.projects['git.openstack.org/openstack/kayobe'].src_dir }}"
     kayobe_config_src_dir: "{{ ansible_env.PWD ~ '/' ~ zuul.projects['git.openstack.org/openstack/kayobe-config-dev'].src_dir }}"
+    # Relative to `kayobe_src_dir`.
+    tenks_src_rel_path: "config/src/tenks"
   environment:
     KAYOBE_CONFIG_SOURCE_PATH: "{{ kayobe_config_src_dir }}"
   roles:
@@ -40,6 +42,11 @@
         dest: "/tmp"
         mode: 0644
         remote_src: true
+
+    - name: Ensure Tenks repository is cloned
+      git:
+        repo: https://github.com/stackhpc/tenks
+        dest: "{{ '/'.join([kayobe_src_dir, tenks_src_rel_path]) }}"
 
     # NOTE(mgoddard): Use the name zz-overrides.yml to ensure this takes
     # precedence over the standard config files.

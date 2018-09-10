@@ -27,6 +27,9 @@ function config_defaults {
     # Path to the kayobe virtual environment.
     export KAYOBE_VENV_PATH="${KAYOBE_VENV_PATH:-${HOME}/kayobe-venv}"
 
+    # Path to the Tenks virtual environment.
+    export TENKS_VENV_PATH="${TENKS_VENV_PATH:-${HOME}/tenks-test-venv}"
+
     # Whether to provision a VM for the seed host.
     export KAYOBE_SEED_VM_PROVISION=${KAYOBE_SEED_VM_PROVISION:-1}
 
@@ -84,24 +87,34 @@ function install_dependencies {
 }
 
 function install_venv {
-    local venv_parent="$(dirname ${KAYOBE_VENV_PATH})"
+    # Install a virtualenv at $1. Install all the packages in proceeding
+    # arguments using pip.
+    venv_path="$1"
+    shift
+    pip_paths="$@"
+    local venv_parent="$(dirname ${venv_path})"
     if [[ ! -d "$venv_parent" ]]; then
         mkdir -p "$venv_parent"
     fi
-    if [[ ! -f "${KAYOBE_VENV_PATH}/bin/activate" ]]; then
-        echo "Creating kayobe virtual environment in ${KAYOBE_VENV_PATH}"
-        virtualenv "${KAYOBE_VENV_PATH}"
+    if [[ ! -f "${venv_path}/bin/activate" ]]; then
+        echo "Creating virtual environment in ${venv_path}"
+        virtualenv "${venv_path}"
         # NOTE: Virtualenv's activate and deactivate scripts reference an
         # unbound variable.
         set +u
-        source "${KAYOBE_VENV_PATH}/bin/activate"
+        source "${venv_path}/bin/activate"
         pip install -U pip
-        pip install "${KAYOBE_SOURCE_PATH}"
+        pip install $pip_paths
         deactivate
         set -u
     else
-        echo "Using existing kayobe virtual environment in ${KAYOBE_VENV_PATH}"
+        echo "Using existing virtual environment in ${venv_path}"
     fi
+}
+
+function install_kayobe_venv {
+    # Install the Kayobe venv.
+    install_venv "${KAYOBE_VENV_PATH}" "${KAYOBE_SOURCE_PATH}"
 }
 
 # Deployment
@@ -223,6 +236,7 @@ function overcloud_deploy {
 }
 
 function overcloud_test {
+    set -eu
     # Perform a simple smoke test against the cloud.
     echo "Performing a simple smoke test"
 
@@ -234,8 +248,9 @@ function overcloud_test {
     source "${KOLLA_CONFIG_PATH:-/etc/kolla}/admin-openrc.sh"
     ${KOLLA_VENV_PATH:-$HOME/kolla-venv}/share/kolla-ansible/init-runonce
 
-    echo "Creating a VM"
-    openstack server create --wait --image cirros --flavor m1.tiny --key-name mykey --network demo-net demo1
+    echo "Creating a server"
+    openstack server create --wait --image cirros --flavor test-rc --key-name mykey --network provision-net demo1
+    echo "Server created:"
     openstack server show demo1
     status=$(openstack server show demo1 -f value -c status)
     if [[ $status != ACTIVE ]]; then
@@ -246,4 +261,51 @@ function overcloud_test {
 
     echo "Deleting the VM"
     openstack server delete --wait demo1
+}
+
+function tenks_deploy {
+    set -eu
+    # Create a simple test Tenks deployment. Assumes that a bridge named
+    # 'breth1' exists.  Arguments:
+    # $1: The path to the Tenks repo.
+    local tenks_path="$1"
+
+    echo "Configuring Tenks"
+
+    environment_setup
+
+    # We don't want to use the Kayobe venv.
+    deactivate
+
+    # Install the Tenks venv.
+    install_venv "${TENKS_VENV_PATH}" "$tenks_path"
+    source ${TENKS_VENV_PATH:-$HOME/tenks-test-venv}/bin/activate
+
+    ansible-galaxy install \
+        --role-file="$tenks_path/requirements.yml" \
+        --roles-path="$tenks_path/ansible/roles/"
+
+    local parent="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+    # Install a trivial script for ovs-vsctl that talks to containerised Open
+    # vSwitch.
+    sudo cp --no-clobber "$parent/ovs-vsctl" /usr/bin/ovs-vsctl
+
+    # The containerised version of Libvirt used by Nova will conflict with
+    # system Libvirt that Tenks uses. Ensure the container isn't running.
+    if sudo docker inspect nova_libvirt > /dev/null 2>&1; then
+        sudo docker stop nova_libvirt
+    fi
+
+    source "${KOLLA_CONFIG_PATH:-/etc/kolla}/admin-openrc.sh"
+
+    pip install python-openstackclient
+
+    local kernel_id="$(openstack image show -f value -c id ipa.vmlinuz)"
+    local ramdisk_id="$(openstack image show -f value -c id ipa.initramfs)"
+    ansible-playbook \
+        -vvv \
+        --inventory "$tenks_path/ansible/inventory" \
+        --extra-vars=@"$parent/tenks-deploy-config.yml" \
+        "$tenks_path/ansible/deploy.yml"
 }

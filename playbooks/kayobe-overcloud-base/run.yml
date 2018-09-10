@@ -4,12 +4,21 @@
     kayobe_src_dir: "{{ ansible_env.PWD ~ '/' ~ zuul.projects['git.openstack.org/openstack/kayobe'].src_dir }}"
     kayobe_config_src_dir: "{{ ansible_env.PWD ~ '/' ~ zuul.projects['git.openstack.org/openstack/kayobe-config-dev'].src_dir }}"
     logs_dir: "/tmp/logs"
+    # Relative to `kayobe_src_dir`.
+    tenks_src_rel_path: "config/src/tenks"
   environment:
     KAYOBE_CONFIG_SOURCE_PATH: "{{ kayobe_config_src_dir }}"
   tasks:
     - name: Ensure overcloud is deployed
       shell:
         cmd: dev/overcloud-deploy.sh > {{ logs_dir }}/ansible/overcloud-deploy
+        chdir: "{{ kayobe_src_dir }}"
+
+    - name: Ensure test Tenks cluster is deployed
+      shell:
+        # Pass absolute source directory, since otherwise the `chdir` will
+        # cause this to fail.
+        cmd: dev/tenks-deploy.sh '{{ tenks_src_rel_path }}' > {{ logs_dir }}/ansible/tenks-deploy
         chdir: "{{ kayobe_src_dir }}"
 
     - name: Perform testing of the overcloud
