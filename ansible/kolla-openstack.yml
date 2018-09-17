@@ -57,18 +57,33 @@
             module: file
             path: "{{ hostvars.localhost.image_cache_path }}"
             state: directory
-            owner: "{{ lookup('env', 'USER') }}"
-            group: "{{ lookup('env', 'USER') }}"
+            owner: "{{ kayobe_ansible_user }}"
+            group: "{{ kayobe_ansible_user }}"
           become: True
           when: >-
             not image_cache_stat.stat.exists or
             not image_cache_stat.stat.writeable
 
-        - name: Ensure Ironic Python Agent images are copied onto the local machine
+        - name: Copy Ironic Python Agent images onto the local machine
           fetch:
             src: "{{ image_cache_path }}/{{ ipa_image_name }}/{{ item.src }}"
-            dest: "{{ hostvars.localhost.image_cache_path }}/{{ ipa_image_name }}/{{ item.dest }}"
+            dest: "/tmp/{{ ipa_image_name }}/{{ item.dest }}"
             flat: True
+          with_items:
+            - src: "{{ ipa_images[0] }}"
+              dest: "{{ ipa_images_kernel_name }}"
+            - src: "{{ ipa_images[1] }}"
+              dest: "{{ ipa_images_ramdisk_name }}"
+
+        - name: Copy Ironic Python Agent images into image cache path
+          local_action:
+            module: copy
+            src: "/tmp/{{ ipa_image_name }}/{{ item.dest }}"
+            dest: "{{ hostvars.localhost.image_cache_path }}/{{ ipa_image_name }}/{{ item.dest }}"
+            owner: "{{ kayobe_ansible_user }}"
+            group: "{{ kayobe_ansible_user }}"
+          become: true
+          become_user: "{{ kayobe_ansible_user }}"
           with_items:
             - src: "{{ ipa_images[0] }}"
               dest: "{{ ipa_images_kernel_name }}"
