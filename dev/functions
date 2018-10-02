@@ -309,3 +309,99 @@ function tenks_deploy {
         --extra-vars=@"$parent/tenks-deploy-config.yml" \
         "$tenks_path/ansible/deploy.yml"
 }
+
+# General purpose
+
+# running_in_container - Returns true otherwise false
+function running_in_container {
+    [[ $(systemd-detect-virt --container) != 'none' ]]
+}
+
+# enable_kernel_bridge_firewall - Enable kernel support for bridge firewalling
+function enable_kernel_bridge_firewall {
+    # Load bridge module. This module provides access to firewall for bridged
+    # frames; and also on older kernels (pre-3.18) it provides sysctl knobs to
+    # enable/disable bridge firewalling
+    sudo modprobe bridge
+    # For newer kernels (3.18+), those sysctl settings are split into a separate
+    # kernel module (br_netfilter). Load it too, if present.
+    sudo modprobe br_netfilter 2>> /dev/null || :
+    # Enable bridge firewalling in case it's disabled in kernel (upstream
+    # default is enabled, but some distributions may decide to change it).
+    # This is at least needed for RHEL 7.2 and earlier releases.
+    for proto in ip ip6; do
+        sudo sysctl -w net.bridge.bridge-nf-call-${proto}tables=1
+    done
+}
+
+function to_bool {
+    if [[ "$1" =~ (y|Y|yes|Yes|YES|true|True|TRUE|on|On|ON) ]]; then
+        true
+    elif [[ "$1" =~ (n|N|no|No|NO|false|False|FALSE|off|Off|OFF) ]]; then
+        false
+    else
+        >&2 echo "$1 was not a valid yaml boolean"
+        exit -1
+    fi
+}
+
+function is_ipxe_enabled {
+    flag="$(kayobe configuration dump --host controllers[0] --var-name kolla_enable_ironic_ipxe)"
+    to_bool "$flag"
+}
+
+function is_cinder_enabled {
+    flag="$(kayobe configuration dump --host controllers[0] --var-name kolla_enable_cinder)"
+    to_bool "$flag"
+}
+
+function configure_iptables {
+    # NOTE(wszumski): adapted from the ironic devstack plugin, see:
+    # https://github.com/openstack/ironic/blob/36e87dc5b472d79470b783fbba9ce396e3cbb96e/devstack/lib/ironic#L2132
+
+    # FIXME(wszumski): set these variables with values from kayobe-config
+    HOST_IP='192.168.33.3'
+    INTERNAL_VIP='192.168.33.2'
+    IRONIC_TFTPSERVER_IP="$HOST_IP"
+    IRONIC_SERVICE_PORT=6385
+    IRONIC_INSPECTOR_PORT=5050
+    IRONIC_HTTP_SERVER="$INTERNAL_VIP"
+    GLANCE_SERVICE_PORT=9192
+    IRONIC_HTTP_PORT=8089
+    ISCSI_SERVICE_PORT=3260
+
+    # enable tftp natting for allowing connections to HOST_IP's tftp server
+    if ! running_in_container; then
+        sudo modprobe nf_conntrack_tftp
+        sudo modprobe nf_nat_tftp
+
+        enable_kernel_bridge_firewall
+    else
+        die_if_module_not_loaded nf_conntrack_tftp
+        die_if_module_not_loaded nf_nat_tftp
+    fi
+    # explicitly allow DHCP - packets are occasionally being dropped here
+    sudo iptables -I INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT || true
+    # nodes boot from TFTP and callback to the API server listening on $HOST_IP
+    sudo iptables -I INPUT -d $IRONIC_TFTPSERVER_IP -p udp --dport 69 -j ACCEPT || true
+
+    sudo iptables -I INPUT -d $HOST_IP -p tcp --dport $IRONIC_SERVICE_PORT -j ACCEPT || true
+    # open ironic API on baremetal network
+    sudo iptables -I INPUT -d $IRONIC_HTTP_SERVER -p tcp --dport $IRONIC_SERVICE_PORT -j ACCEPT || true
+    # allow IPA to connect to ironic API
+    sudo iptables -I FORWARD -p tcp --dport $IRONIC_SERVICE_PORT -j ACCEPT || true
+    # allow IPA to connect to ironic inspector
+    sudo iptables -I FORWARD -p tcp --dport $IRONIC_INSPECTOR_PORT -j ACCEPT || true
+
+    # agent ramdisk gets instance image from swift
+    sudo iptables -I INPUT -d $HOST_IP -p tcp --dport ${SWIFT_DEFAULT_BIND_PORT:-8080} -j ACCEPT || true
+    sudo iptables -I INPUT -d $HOST_IP -p tcp --dport $GLANCE_SERVICE_PORT -j ACCEPT || true
+
+    if is_ipxe_enabled; then
+        sudo iptables -I INPUT -d $HOST_IP -p tcp --dport $IRONIC_HTTP_PORT -j ACCEPT || true
+    fi
+
+    if is_cinder_enabled; then
+        sudo iptables -I INPUT -d $HOST_IP -p tcp --dport $ISCSI_SERVICE_PORT -j ACCEPT || true
+    fi
+}
