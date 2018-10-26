@@ -1152,6 +1152,50 @@ class TestCase(unittest.TestCase):
 
     @mock.patch.object(commands.KayobeAnsibleMixin,
                        "run_kayobe_playbooks")
+    def test_baremetal_compute_serial_console_enable(self, mock_run):
+        command = commands.BaremetalComputeSerialConsoleEnable(TestApp(), [])
+        parser = command.get_parser("test")
+        parsed_args = parser.parse_args([])
+        result = command.run(parsed_args)
+        self.assertEqual(0, result)
+        expected_calls = [
+            mock.call(
+                mock.ANY,
+                [
+                    "ansible/baremetal-compute-serial-console.yml",
+
+                ],
+                extra_vars={
+                    "cmd": "enable",
+                }
+            ),
+        ]
+        self.assertEqual(expected_calls, mock_run.call_args_list)
+
+    @mock.patch.object(commands.KayobeAnsibleMixin,
+                       "run_kayobe_playbooks")
+    def test_baremetal_compute_serial_console_disable(self, mock_run):
+        command = commands.BaremetalComputeSerialConsoleDisable(TestApp(), [])
+        parser = command.get_parser("test")
+        parsed_args = parser.parse_args([])
+        result = command.run(parsed_args)
+        self.assertEqual(0, result)
+        expected_calls = [
+            mock.call(
+                mock.ANY,
+                [
+                    "ansible/baremetal-compute-serial-console.yml",
+
+                ],
+                extra_vars={
+                    "cmd": "disable",
+                }
+            ),
+        ]
+        self.assertEqual(expected_calls, mock_run.call_args_list)
+
+    @mock.patch.object(commands.KayobeAnsibleMixin,
+                       "run_kayobe_playbooks")
     def test_baremetal_compute_update_deployment_image(self, mock_run):
         command = commands.BaremetalComputeUpdateDeploymentImage(TestApp(), [])
         parser = command.get_parser("test")

@@ -1291,6 +1291,32 @@ class BaremetalComputeRename(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
+class BaremetalComputeSerialConsoleEnable(KayobeAnsibleMixin, VaultMixin,
+                                          Command):
+    """Enable Serial Console for Baremetal Compute Nodes"""
+
+    def take_action(self, parsed_args):
+        self.app.LOG.debug("Enabling serial console for ironic nodes")
+        extra_vars = {}
+        extra_vars["cmd"] = "enable"
+        playbooks = _build_playbook_list("baremetal-compute-serial-console")
+        self.run_kayobe_playbooks(parsed_args, playbooks,
+                                  extra_vars=extra_vars)
+
+
+class BaremetalComputeSerialConsoleDisable(KayobeAnsibleMixin, VaultMixin,
+                                           Command):
+    """Disable Serial Console for Baremetal Compute Nodes"""
+
+    def take_action(self, parsed_args):
+        self.app.LOG.debug("Disable serial console for ironic nodes")
+        extra_vars = {}
+        extra_vars["cmd"] = "disable"
+        playbooks = _build_playbook_list("baremetal-compute-serial-console")
+        self.run_kayobe_playbooks(parsed_args, playbooks,
+                                  extra_vars=extra_vars)
+
+
 class BaremetalComputeUpdateDeploymentImage(KayobeAnsibleMixin, VaultMixin,
                                             Command):
     """Update the Ironic nodes to use the new  kernel and ramdisk images."""
