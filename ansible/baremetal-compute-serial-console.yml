@@ -40,7 +40,7 @@
             to run this playbook.
         when:
           - ironic_serial_console_tcp_pool_end is not defined
-      when: cmd == "enable"
+      when: cmd == "enable" or cmd == "validate"
 
     - name: Get list of nodes
       command: >
@@ -54,6 +54,7 @@
         # NOTE: Without this, the controller's ansible_host variable will not
         # be respected when using delegate_to.
         ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      when: cmd != "validate"
 
     - block:
       - name: Fail if console interface is not ipmitool-socat

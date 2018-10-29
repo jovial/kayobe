@@ -200,6 +200,11 @@
                 The default console interface must be ipmitool-socat if you set ironic_serial_console_enable to true
             when: kolla_ironic_default_console_interface != 'ipmitool-socat'
 
+          - name: Perform validation checks in baremetal-node-serial-console
+            include_playbook: baremetal-compute-serial-console.yml
+            vars:
+              cmd: validate
+
       when: ironic_serial_console_enable | bool
 
 - name: Ensure Kolla Ansible is configured
