@@ -182,7 +182,7 @@
         - name: Check kolla_enable_nova_serialconsole_proxy is enabled
           fail:
             msg: >
-            You must enable kolla_enable_nova_serialconsole_proxy if you have ironic_serial_console_enable set to true
+              You must enable kolla_enable_nova_serialconsole_proxy if you have ironic_serial_console_enable set to true
           when: not kolla_enable_nova_serialconsole_proxy | bool
 
         - name: Check ipmitool-socat is in enabled in kolla_ironic_enabled_console_interfaces
