@@ -171,6 +171,37 @@
       set_fact:
         kolla_api_interface: "{{ kolla_bifrost_network_interface }}"
 
+- name: Validate configuration options for kolla-ansible
+  hosts: localhost
+  tags:
+    - kolla-ansible
+    - config-validation
+  tasks:
+    - name: Validate serial console configuration
+      block:
+        - name: Check kolla_enable_nova_serialconsole_proxy is enabled
+          fail:
+            msg: >
+            You must enable kolla_enable_nova_serialconsole_proxy if you have ironic_serial_console_enable set to true
+          when: not kolla_enable_nova_serialconsole_proxy | bool
+
+        - name: Check ipmitool-socat is in enabled in kolla_ironic_enabled_console_interfaces
+          fail:
+            msg: >
+              kolla_ironic_enabled_console_interfaces must contain ipmitool-socat if you set
+              ironic_serial_console_enable to true
+          when:
+            - kolla_ironic_enabled_console_interfaces is defined
+            - 'ipmitool-socat' not in kolla_ironic_enabled_console_interfaces
+
+          - name: Validate default console interface
+            fail:
+              msg: >
+                The default console interface must be ipmitool-socat if you set ironic_serial_console_enable to true
+            when: kolla_ironic_default_console_interface != 'ipmitool-socat'
+
+      when: ironic_serial_console_enable | bool
+
 - name: Ensure Kolla Ansible is configured
   hosts: localhost
   tags:
