@@ -2,7 +2,5 @@
 # This is a wrapper around baremetal-compute-serial-console which only runs the playbook when
 # ironic_serial_console_enable is set to true.
 
-- hosts: localhost
-  tasks:
-    import_playbook: baremetal-compute-serial-console.yml
-    when: ironic_serial_console_enable | bool
+- import_playbook: baremetal-compute-serial-console.yml
+  when: ironic_serial_console_enable | bool

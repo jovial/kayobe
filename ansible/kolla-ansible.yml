@@ -188,22 +188,16 @@
         - name: Check ipmitool-socat is in enabled in kolla_ironic_enabled_console_interfaces
           fail:
             msg: >
-              kolla_ironic_enabled_console_interfaces must contain ipmitool-socat if you set
               ironic_serial_console_enable to true
           when:
             - kolla_ironic_enabled_console_interfaces is defined
-            - 'ipmitool-socat' not in kolla_ironic_enabled_console_interfaces
+            - "'ipmitool-socat' not in kolla_ironic_enabled_console_interfaces"
 
-          - name: Validate default console interface
-            fail:
-              msg: >
-                The default console interface must be ipmitool-socat if you set ironic_serial_console_enable to true
-            when: kolla_ironic_default_console_interface != 'ipmitool-socat'
-
-          - name: Perform validation checks in baremetal-node-serial-console
-            include_playbook: baremetal-compute-serial-console.yml
-            vars:
-              cmd: validate
+        - name: Validate default console interface
+          fail:
+            msg: >
+              The default console interface must be ipmitool-socat if you set ironic_serial_console_enable to true
+          when: kolla_ironic_default_console_interface != 'ipmitool-socat'
 
       when: ironic_serial_console_enable | bool
 
