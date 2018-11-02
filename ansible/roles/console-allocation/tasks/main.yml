@@ -27,14 +27,6 @@
   become: True
   with_items: "{{ console_allocation_package_dependencies }}"
   run_once: True
-  when: false #FIXME: remove after testing
-
-- name: Validate that an ironic node name or UUID has been set
-  fail:
-    msg: >-
-      You must define console_allocation_ironic_node. This should be a name
-      or UUID of an Ironic node.
-  when: console_allocation_ironic_node is not defined
 
 - name: Validate allocation pool start
   vars:
@@ -44,7 +36,7 @@
       You must must define an console_allocation_pool_start. This should
       be a valid TCP port.
   when: >-
-    console_allocation_pool_end is not defined or
+    console_allocation_pool_end is none or
     port | int < 0 or port | int > 65535
 
 - name: Validate allocation pool end
@@ -55,7 +47,7 @@
       You must must define an console_allocation_pool_end. This should
       be a valid TCP port.
   when: >-
-    console_allocation_pool_end is not defined or
+    console_allocation_pool_end is none or
     port | int < 0 or port | int > 65535
 
 - name: Validate that allocation start is less than allocation end
@@ -71,7 +63,7 @@
   local_action:
     module: console_allocation
     allocation_file: "{{ console_allocation_filename }}"
-    node: "{{ console_allocation_ironic_node }}"
+    nodes: "{{ console_allocation_ironic_nodes }}"
     allocation_pool_start: "{{ console_allocation_pool_start }}"
     allocation_pool_end: "{{ console_allocation_pool_end }}"
   register: result

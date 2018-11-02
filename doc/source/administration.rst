@@ -230,18 +230,25 @@ Once these requirements have been satisfied, you can run::
 
     (kayobe) $ kayobe baremetal compute serial console enable
 
-This will reserve a TCP port for use with this serial console interface. The allocations
-are stored in ``${KAYOBE_CONFIG_PATH}/console-allocation.yml``. The current implementation
-uses a global pool, which is specifed by ``ironic_serial_console_tcp_pool_start`` and
-``ironic_serial_console_tcp_pool_end``; these variables can set in ``etc/kayobe/ironic.yml``.
+This will reserve a TCP port for each node to use for the serial console interface.
+The allocations are stored in ``${KAYOBE_CONFIG_PATH}/console-allocation.yml``. The
+current implementation uses a global pool, which is specified by
+``ironic_serial_console_tcp_pool_start`` and ``ironic_serial_console_tcp_pool_end``;
+these variables can set in ``etc/kayobe/ironic.yml``.
 
 To disable the serial console you can use::
 
     (kayobe) $ kayobe baremetal compute serial console disable
 
-The port allocated for this node is retained and must be manually removed from
+The port allocated for each node is retained and must be manually removed from
 ``${KAYOBE_CONFIG_PATH}/console-allocation.yml`` if you want it to be reused by another
 Ironic node with a different name.
+
+You can optionally limit the nodes targeted by setting ``baremetal-compute-limit``::
+
+    (kayobe) $ kayobe baremetal compute serial console enable --baremetal-compute-limit sand-6-1
+
+which should take the form of an `ansible host pattern <https://docs.ansible.com/ansible/latest/user_guide/intro_patterns.html>`_.
 
 .. _update_deployment_image:
 

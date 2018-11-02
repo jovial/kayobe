@@ -22,18 +22,18 @@ module: console_allocation
 short_description: Allocate a serial console TCP port for an Ironic node from a pool
 author: Mark Goddard (mark@stackhpc.com) and Will Szumski (will@stackhpc.com)
 options:
-  - option-name: node
-    description: Name or UUID of Ironic Node
+  - option-name: nodes
+    description: List of Names or UUIDs corresponding to Ironic Nodes
     required: True
-    type: string
+    type: list
   - option-name: allocation_pool_start
     description: First address of the pool from which to allocate
-    required: False
-    type: string
+    required: True
+    type: int
   - option-name: allocation_pool_end
     description: Last address of the pool from which to allocate
-    required: False
-    type: string
+    required: True
+    type: int
   - option-name: allocation_file
     description: >
       Path to a file in which to store the allocations. Will be created if it
@@ -41,25 +41,25 @@ options:
     required: True
     type: string
 requirements:
-  - netaddr
   - PyYAML
 """
 
 EXAMPLES = """
-- name: Ensure Ironic node has a TCP port assgined for it's serial console
+- name: Ensure Ironic node has a TCP port assigned for it's serial console
   console_allocation:
-    node: node-1
+    nodes: ['node-1', 'node-2']
     allocation_pool_start: 30000
     allocation_pool_end: 31000
     allocation_file: /path/to/allocation/file.yml
 """
 
 RETURN = """
-port:
-  description: The allocated serial console TCP port
+ports:
+  description: >
+    A dictionary mapping the node name to the allocated serial console TCP port
   returned: success
-  type: int
-  sample: 30000
+  type: dict
+  sample: { 'node1' : 30000, 'node2':300001 }
 """
 
 from ansible.module_utils.basic import *
@@ -114,17 +114,20 @@ def is_valid_port(port):
         return False
     return True
 
+
 def update_allocation(module, allocations):
     """Allocate a TCP port of an Ironic serial console.
 
     :param module: AnsibleModule instance
     :param allocations: Existing IP address allocations
     """
-    node = module.params['node']
+    nodes = module.params['nodes']
+
     allocation_pool_start = module.params['allocation_pool_start']
     allocation_pool_end = module.params['allocation_pool_end']
     result = {
         'changed': False,
+        'ports': {}
     }
     object_name = "serial_console_allocations"
     console_allocations = allocations.setdefault(object_name, {})
@@ -135,19 +138,19 @@ def update_allocation(module, allocations):
             (object_name,
              ", ".join("%s: %s" % (node, port)
                        for node, port in invalid_allocations.items())))
-    if node not in console_allocations:
-        result['changed'] = True
-        allocated_consoles = { int(x) for x in  console_allocations.values() }
-        allocation_pool = { x for x in range(allocation_pool_start, allocation_pool_end + 1) }
-        free_ports = allocation_pool - allocated_consoles
-        for free_port in free_ports:
-            port = free_port
-            break
-        else:
-            module.fail_json(msg="No unallocated TCP ports for %s in %s" % (node, object_name))
-        free_ports.remove(port)
-        console_allocations[node] = port
-    result['port'] = console_allocations[node]
+
+    allocated_consoles = { int(x) for x in  console_allocations.values() }
+    allocation_pool = { x for x in range(allocation_pool_start, allocation_pool_end + 1) }
+    free_ports = list(allocation_pool - allocated_consoles).sort(reverse=True)
+
+    for node in nodes:
+        if node not in console_allocations:
+            if len(free_ports) < 1:
+                module.fail_json(msg="No unallocated TCP ports for %s in %s" % (node, object_name))
+            result['changed'] = True
+            free_port = free_ports.pop()
+            console_allocations[node] = port
+        result['ports'][node] = console_allocations[node]
     return result
 
 
@@ -163,7 +166,7 @@ def allocate(module):
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            node=dict(required=True, type='str'),
+            nodes=dict(required=True, type='list'),
             allocation_pool_start=dict(required=False, type='int'),
             allocation_pool_end=dict(required=False, type='int'),
             allocation_file=dict(required=True, type='str'),
@@ -179,7 +182,7 @@ def main():
     try:
         results = allocate(module)
     except Exception as e:
-        module.fail_json(msg="Failed to allocate IP address: %s" % repr(e))
+        module.fail_json(msg="Failed to allocate TCP port: %s" % repr(e))
     else:
         module.exit_json(**results)
 

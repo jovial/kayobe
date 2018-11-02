@@ -16,30 +16,60 @@
           - python-openstackclient
           - python-ironicclient
 
+    - block:
+       - name: Fail if allocation pool start not defined
+         fail:
+           msg: >
+             The variable, ironic_serial_console_tcp_pool_start is not defined.
+             This variable is required to run this playbook.
+         when: ironic_serial_console_tcp_pool_start is none
+
+       - name: Fail if allocation pool end not defined
+         fail:
+           msg: >
+             The variable, ironic_serial_console_tcp_pool_end is not defined.
+             This variable is required to run this playbook.
+         when:
+           - ironic_serial_console_tcp_pool_end is none
+
+       - name: Get list of nodes to allocate serial consoles for
+         set_fact:
+           baremetal_nodes: >-
+             {{ query('inventory_hostnames', console_compute_node_limit |
+             default('baremetal-compute') ) | unique }}
+
+       - name: Reserve TCP ports for ironic serial consoles
+         include_role:
+           name: console-allocation
+         vars:
+           console_allocation_pool_start: "{{ ironic_serial_console_tcp_pool_start }}"
+           console_allocation_pool_end: "{{ ironic_serial_console_tcp_pool_end }}"
+           console_allocation_ironic_nodes: "{{ baremetal_nodes }}"
+           console_allocation_filename: "{{ kayobe_config_path }}/console-allocation.yml"
+         when: cmd == "enable"      
+
 - name: Enable serial console
-  hosts: baremetal-compute
+  hosts: "{{ console_compute_node_limit | default('baremetal-compute') }}"
   gather_facts: False
   vars:
     venv: "{{ virtualenv_path }}/openstack-cli"
     controller_host: "{{ groups['controllers'][0] }}"
-  # Use serial=1 to avoid races between allocations for different hosts.
-  serial: 1
   tasks:
     - block:
       - name: Fail if allocation pool start not defined
         fail:
           msg: >
-            The variable, ironic_serial_console_tcp_pool_start is not defined. This variable is required
-            to run this playbook.
-        when: ironic_serial_console_tcp_pool_start is not defined
+            The variable, ironic_serial_console_tcp_pool_start is not defined.
+            This variable is required to run this playbook.
+        when: ironic_serial_console_tcp_pool_start is none
 
       - name: Fail if allocation pool end not defined
         fail:
           msg: >
-            The variable, ironic_serial_console_tcp_pool_end is not defined. This variable is required
-            to run this playbook.
+            The variable, ironic_serial_console_tcp_pool_end is not defined.
+            This variable is required to run this playbook.
         when:
-          - ironic_serial_console_tcp_pool_end is not defined
+          - ironic_serial_console_tcp_pool_end is none
       when: cmd == "enable"
 
     - name: Get list of nodes
@@ -62,18 +92,10 @@
             In order to use the serial console you must set the console_interface to ipmitool-socat.
         when: node["Console Interface"] != "ipmitool-socat"
 
-      - name: Reserve TCP port for ironic serial console
-        include_role:
-          name: console-allocation
-        vars:
-          console_allocation_pool_start: "{{ ironic_serial_console_tcp_pool_start }}"
-          console_allocation_pool_end: "{{ ironic_serial_console_tcp_pool_end }}"
-          console_allocation_ironic_node: "{{ node['Name'] }}"
-          console_allocation_filename: "{{ kayobe_config_path }}/console-allocation.yml"
-
       - name: Set IPMI serial console terminal port
         vars:
-          port: "{{ console_allocation_result.port }}"
+          name: "{{ node['Name'] }}"
+          port: "{{ hostvars[controller_host].console_allocation_result.ports[name] }}"
           # NOTE: Without this, the controller's ansible_host variable will not
           # be respected when using delegate_to.
           ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
@@ -82,7 +104,7 @@
         delegate_to: "{{ controller_host }}"
         environment: "{{ openstack_auth_env }}"
         when: >-
-          (node['Driver Info']|default({})).ipmi_terminal_port is not defined or
+          node['Driver Info'].ipmi_terminal_port is not defined or
           node['Driver Info'].ipmi_terminal_port | int != port | int
 
       - name: Enable the IPMI socat serial console
