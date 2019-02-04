@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import base64
 import glob
 import logging
 import os
@@ -168,9 +169,15 @@ def quote_and_escape(value):
 
 
 def escape_jinja(string):
-    """Wraps a string in jinja raw tags.
+    """Escapes a string such that when it is templated any jinja
+    expressions are not expanded.
 
     :param string: the string to escape
     :return: the escaped string
     """
-    return ''.join(('{% raw %}', string, '{% endraw %}'))
+    # We base64 encode the string to avoid the need to escape characters.
+    # This is because ansible has some parsing quirks that makes it fairly
+    # hard to escape stuff in generic way.
+    # See: https://github.com/ansible/ansible/issues/10464
+    b64_value = base64.b64encode(bytes(string))
+    return ''.join(('{{', "'", b64_value, "' | b64decode ", '}}'))
