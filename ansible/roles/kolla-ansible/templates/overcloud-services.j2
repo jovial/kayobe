@@ -498,3 +498,13 @@ storage
 
 [prometheus-alertmanager:children]
 monitoring
+
+[prometheus-openstack-exporter:children]
+monitoring
+
+[prometheus-mtail:children]
+monitoring
+control
+compute
+network
+storage
