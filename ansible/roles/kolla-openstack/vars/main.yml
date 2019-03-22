@@ -143,6 +143,11 @@ kolla_openstack_custom_config:
     dest: "{{ kolla_node_custom_config_path }}/nova"
     patterns: "*"
     enabled: "{{ kolla_enable_nova }}"
+  # Prometheus rules
+  - src: "{{ kolla_extra_config_path }}//prometheus/rules"
+    dest: "{{ kolla_node_custom_config_path }}/prometheus/rules"
+    patterns: "*.rules"
+    enabled: true
   # Octavia.
   - src: "{{ kolla_extra_config_path }}/octavia"
     dest: "{{ kolla_node_custom_config_path }}/octavia"
