@@ -32,15 +32,20 @@ def get_data_files_path(*relative_path):
     """Given a relative path to a data file, return the absolute path"""
     # Detect editable pip install / python setup.py develop and use a path
     # relative to the source directory
+    src_path = resolve_egg_link('kayobe')
+    if src_path:
+        return os.path.join(src_path, *relative_path)
+    return os.path.join(_BASE_PATH, *relative_path)
+
+
+def resolve_egg_link(package):
     egg_glob = os.path.join(
-        sys.prefix, 'lib*', 'python*', '*-packages', 'kayobe.egg-link'
+        sys.prefix, 'lib*', 'python*', '*-packages', '%s.egg-link' % package
     )
     egg_link = glob.glob(egg_glob)
     if egg_link:
         with open(egg_link[0], "r") as f:
-            realpath = f.readline().strip()
-        return os.path.join(realpath, *relative_path)
-    return os.path.join(_BASE_PATH, *relative_path)
+            return f.readline().strip()
 
 
 def yum_install(packages):

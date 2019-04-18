@@ -13,12 +13,14 @@
 # under the License.
 
 from __future__ import absolute_import
+import os
 import sys
 
 from cliff.app import App
 from cliff.commandmanager import CommandManager
 
 from kayobe import version
+from kayobe.ansible import DEFAULT_CONFIG_PATH
 
 
 class KayobeApp(App):
@@ -45,6 +47,8 @@ class KayobeApp(App):
 
 
 def main(argv=sys.argv[1:]):
+    if "KAYOBE_DO_NOT_MODIFY_ENV_AUTODETECT" not in os.environ:
+        os.execvp("kayobe-env-helper", [DEFAULT_CONFIG_PATH] + sys.argv)
     myapp = KayobeApp()
     return myapp.run(argv)
 

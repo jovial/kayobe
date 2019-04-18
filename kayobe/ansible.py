@@ -26,11 +26,20 @@ from kayobe import utils
 from kayobe import vault
 
 
-DEFAULT_CONFIG_PATH = "/etc/kayobe"
-
 CONFIG_PATH_ENV = "KAYOBE_CONFIG_PATH"
 
 LOG = logging.getLogger(__name__)
+
+
+def get_default_config_path():
+    # Detect path of kayobe-config installed with pip install -e
+    src_path = utils.resolve_egg_link('kayobe-config')
+    if not src_path:
+        return "/etc/kayobe"
+    return os.path.join(src_path, 'etc', 'kayobe')
+
+
+DEFAULT_CONFIG_PATH = get_default_config_path()
 
 
 def add_args(parser):
