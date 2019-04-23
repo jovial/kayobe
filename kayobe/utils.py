@@ -203,7 +203,9 @@ def setup_env():
             env_path = "/etc/kayobe"
         env_path = os.path.join(env_path, "kayobe-env")
         script_path = resolve_egg_link('kayobe')
-        if not script_path:
+        if script_path:
+            script_path = os.path.join(script_path, "bin")
+        else:
             script_path = _BIN_PATH
         script_path = os.path.join(script_path, "kayobe-env-helper")
         os.execvp(script_path, [script_path, env_path] + sys.argv)
