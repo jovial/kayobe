@@ -19,7 +19,7 @@ import sys
 from cliff.app import App
 from cliff.commandmanager import CommandManager
 
-from kayobe import version
+from kayobe import version, utils
 from kayobe.ansible import DEFAULT_CONFIG_PATH
 
 
@@ -48,7 +48,12 @@ class KayobeApp(App):
 
 def main(argv=sys.argv[1:]):
     if "KAYOBE_DO_NOT_MODIFY_ENV_AUTODETECT" not in os.environ:
-        os.execvp("kayobe-env-helper", [DEFAULT_CONFIG_PATH] + sys.argv)
+        path = utils.resolve_egg_link('kayobe-config')
+        if not path:
+            path = "/etc/kayobe"
+        path = os.path.join(path, "kayobe-env")
+        os.execvp("kayobe-env-helper", [
+            sys.argv[0], path] + sys.argv[1:])
     myapp = KayobeApp()
     return myapp.run(argv)
 
