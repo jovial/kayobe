@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Simple wrapper to source the environmental configuration file:
+# kayobe-env, and call the program again with the
+# KAYOBE_DISABLE_ENV_AUTODETECT environmental variable set.
+
+set -eu
+set -o pipefail
+
+if [ "$#" -lt "2" ]; then
+    echo "$0 env-file command ..."
+    exit 1
+fi
+
+function main {
+    export KAYOBE_DISABLE_ENV_AUTODETECT=True
+
+    source "$1" > /dev/null 2>&1
+    shift
+
+    exec $@
+}
+
+main
+

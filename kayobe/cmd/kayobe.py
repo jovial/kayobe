@@ -13,14 +13,13 @@
 # under the License.
 
 from __future__ import absolute_import
-import os
 import sys
 
 from cliff.app import App
 from cliff.commandmanager import CommandManager
 
-from kayobe import version, utils
-from kayobe.ansible import DEFAULT_CONFIG_PATH
+from kayobe import version
+from kayobe.utils import setup_env
 
 
 class KayobeApp(App):
@@ -47,13 +46,7 @@ class KayobeApp(App):
 
 
 def main(argv=sys.argv[1:]):
-    if "KAYOBE_DO_NOT_MODIFY_ENV_AUTODETECT" not in os.environ:
-        path = utils.resolve_egg_link('kayobe-config')
-        if not path:
-            path = "/etc/kayobe"
-        path = os.path.join(path, "kayobe-env")
-        os.execvp("kayobe-env-helper", [
-            "kayobe-env-helper", path] + sys.argv)
+    setup_env()
     myapp = KayobeApp()
     return myapp.run(argv)
 

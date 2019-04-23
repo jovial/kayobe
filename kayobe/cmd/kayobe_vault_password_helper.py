@@ -15,12 +15,14 @@
 from __future__ import print_function
 import os
 
+from kayobe.utils import setup_env
 
 VAULT_PASSWORD_ENV = "KAYOBE_VAULT_PASSWORD"
 
 
 def main():
     """Helper script to allow specification of vault password via env."""
+    setup_env()
     password = os.getenv(VAULT_PASSWORD_ENV)
     if password:
         print(password)

@@ -186,3 +186,20 @@ def escape_jinja(string):
 
     b64_value = base64.b64encode(string.encode())
     return ''.join(('{{', "'", b64_value.decode(), "' | b64decode ", '}}'))
+
+
+def setup_env():
+    """
+    If the environmental variable: KAYOBE_DISABLE_ENV_AUTODETECT is not
+    set, this will attempt to detect the location of kayobe-config from the
+    egg-link and source the environment setup script (kayobe-env).
+
+    Does not return.
+    """
+    if "KAYOBE_DISABLE_ENV_AUTODETECT" not in os.environ:
+        path = resolve_egg_link('kayobe-config')
+        if not path:
+            path = "/etc/kayobe"
+        path = os.path.join(path, "kayobe-env")
+        os.execvp("kayobe-env-helper", [
+            "kayobe-env-helper", path] + sys.argv)
