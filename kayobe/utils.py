@@ -25,7 +25,8 @@ import yaml
 
 LOG = logging.getLogger(__name__)
 
-_BASE_PATH = os.path.join(sys.prefix, "share", "kayobe")
+_SHARE_PATH = os.path.join(sys.prefix, "share", "kayobe")
+_BIN_PATH = os.path.join(sys.prefix, "bin")
 
 
 def get_data_files_path(*relative_path):
@@ -35,7 +36,7 @@ def get_data_files_path(*relative_path):
     src_path = resolve_egg_link('kayobe')
     if src_path:
         return os.path.join(src_path, *relative_path)
-    return os.path.join(_BASE_PATH, *relative_path)
+    return os.path.join(_SHARE_PATH, *relative_path)
 
 
 def resolve_egg_link(package):
@@ -189,17 +190,20 @@ def escape_jinja(string):
 
 
 def setup_env():
-    """
-    If the environmental variable: KAYOBE_DISABLE_ENV_AUTODETECT is not
+    """If the environmental variable: KAYOBE_DISABLE_ENV_AUTODETECT is not
     set, this will attempt to detect the location of kayobe-config from the
     egg-link and source the environment setup script (kayobe-env).
 
     Does not return.
     """
+
     if "KAYOBE_DISABLE_ENV_AUTODETECT" not in os.environ:
-        path = resolve_egg_link('kayobe-config')
-        if not path:
-            path = "/etc/kayobe"
-        path = os.path.join(path, "kayobe-env")
-        os.execvp("kayobe-env-helper", [
-            "kayobe-env-helper", path] + sys.argv)
+        env_path = resolve_egg_link('kayobe-config')
+        if not env_path:
+            env_path = "/etc/kayobe"
+        env_path = os.path.join(env_path, "kayobe-env")
+        script_path = resolve_egg_link('kayobe')
+        if not script_path:
+            script_path = _BIN_PATH
+        script_path = os.path.join(script_path, "kayobe-env-helper")
+        os.execvp(script_path, [script_path, env_path] + sys.argv)
