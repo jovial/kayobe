@@ -77,7 +77,6 @@ def galaxy_install(role_file, roles_path, force=False):
 
 
 def galaxy_remove(roles_to_remove, roles_path):
-
     """Remove Ansible roles via Ansible Galaxy."""
     cmd = ["ansible-galaxy", "remove"]
     cmd += ["--roles-path", roles_path]
@@ -195,6 +194,7 @@ def setup_env():
     egg-link and source the environment setup script (kayobe-env).
 
     Does not return.
+
     """
 
     if "KAYOBE_DISABLE_ENV_AUTODETECT" not in os.environ:

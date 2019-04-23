@@ -18,8 +18,8 @@ import sys
 from cliff.app import App
 from cliff.commandmanager import CommandManager
 
-from kayobe import version
 from kayobe.utils import setup_env
+from kayobe import version
 
 
 class KayobeApp(App):
