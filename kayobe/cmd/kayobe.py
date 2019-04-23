@@ -53,7 +53,7 @@ def main(argv=sys.argv[1:]):
             path = "/etc/kayobe"
         path = os.path.join(path, "kayobe-env")
         os.execvp("kayobe-env-helper", [
-            sys.argv[0], path] + sys.argv[1:])
+            "kayobe-env-helper", path] + sys.argv)
     myapp = KayobeApp()
     return myapp.run(argv)
 
