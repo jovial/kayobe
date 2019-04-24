@@ -18,7 +18,7 @@ import sys
 from cliff.app import App
 from cliff.commandmanager import CommandManager
 
-from kayobe.utils import setup_env
+from kayobe.utils import setup_env, add_common_parser_arguments
 from kayobe import version
 
 
@@ -32,6 +32,8 @@ class KayobeApp(App):
             command_manager=CommandManager('kayobe.cli'),
             deferred_help=True,
             )
+        # required for interactive mode to function with common arguments
+        add_common_parser_arguments(self.parser)
 
     def initialize_app(self, argv):
         self.LOG.debug('initialize_app')
