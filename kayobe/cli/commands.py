@@ -12,10 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from abc import ABCMeta
 import json
 import sys
 
 from cliff.command import Command
+import six
 
 from kayobe import ansible
 from kayobe import kolla_ansible
@@ -82,6 +84,16 @@ class KayobeAnsibleMixin(object):
         return ansible.config_dump(*args, **kwargs)
 
 
+@six.add_metaclass(ABCMeta)
+class KayobeCommand(Command):
+    """Base class for kayobe commands; adds any shared options"""
+
+    def get_parser(self, prog_name):
+        parser = super(KayobeCommand, self).get_parser(prog_name)
+        utils.add_common_parser_arguments(parser)
+        return parser
+
+
 class KollaAnsibleMixin(object):
     """Mixin class for commands running Kolla Ansible."""
 
@@ -118,7 +130,8 @@ class KollaAnsibleMixin(object):
         return kolla_ansible.run_seed(*args, **kwargs)
 
 
-class ControlHostBootstrap(KayobeAnsibleMixin, VaultMixin, Command):
+class ControlHostBootstrap(KayobeAnsibleMixin,
+                           VaultMixin, KayobeCommand):
     """Bootstrap the Kayobe control environment.
 
     * Downloads and installs Ansible roles from Galaxy.
@@ -135,7 +148,7 @@ class ControlHostBootstrap(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks, tags="install")
 
 
-class ControlHostUpgrade(KayobeAnsibleMixin, VaultMixin, Command):
+class ControlHostUpgrade(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Upgrade the Kayobe control environment.
 
     * Downloads and installs updated Ansible roles from Galaxy.
@@ -156,7 +169,7 @@ class ControlHostUpgrade(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks, tags="install")
 
 
-class ConfigurationDump(KayobeAnsibleMixin, VaultMixin, Command):
+class ConfigurationDump(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Dump Kayobe configuration.
 
     Dumps kayobe Ansible host variables to standard output. The output may be
@@ -190,7 +203,7 @@ class ConfigurationDump(KayobeAnsibleMixin, VaultMixin, Command):
             sys.exit(1)
 
 
-class PlaybookRun(KayobeAnsibleMixin, VaultMixin, Command):
+class PlaybookRun(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Run a Kayobe Ansible playbook.
 
     Allows a single Kayobe ansible playbook to be run. For advanced users only.
@@ -206,7 +219,7 @@ class PlaybookRun(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, parsed_args.playbook)
 
 
-class KollaAnsibleRun(KollaAnsibleMixin, VaultMixin, Command):
+class KollaAnsibleRun(KollaAnsibleMixin, VaultMixin, KayobeCommand):
     """Run a Kolla Ansible command.
 
     Allows a single kolla-ansible command to be run. For advanced users only.
@@ -228,7 +241,7 @@ class KollaAnsibleRun(KollaAnsibleMixin, VaultMixin, Command):
                                parsed_args.kolla_inventory_filename)
 
 
-class PhysicalNetworkConfigure(KayobeAnsibleMixin, VaultMixin, Command):
+class PhysicalNetworkConfigure(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Configure a set of physical network devices."""
 
     def get_parser(self, prog_name):
@@ -276,7 +289,7 @@ class PhysicalNetworkConfigure(KayobeAnsibleMixin, VaultMixin, Command):
 
 
 class SeedHypervisorHostConfigure(KollaAnsibleMixin, KayobeAnsibleMixin,
-                                  VaultMixin, Command):
+                                  VaultMixin, KayobeCommand):
     """Configure the seed hypervisor node host OS and services.
 
     * Allocate IP addresses for all configured networks.
@@ -333,7 +346,8 @@ class SeedHypervisorHostConfigure(KollaAnsibleMixin, KayobeAnsibleMixin,
                                   limit="seed-hypervisor")
 
 
-class SeedHypervisorHostCommandRun(KayobeAnsibleMixin, VaultMixin, Command):
+class SeedHypervisorHostCommandRun(KayobeAnsibleMixin, VaultMixin,
+                                   KayobeCommand):
     """Run command on the seed hypervisor host."""
 
     def get_parser(self, prog_name):
@@ -354,7 +368,7 @@ class SeedHypervisorHostCommandRun(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class SeedHypervisorHostUpgrade(KayobeAnsibleMixin, VaultMixin, Command):
+class SeedHypervisorHostUpgrade(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Upgrade the seed hypervisor host services.
 
     Performs the changes necessary to make the host services suitable for the
@@ -370,7 +384,7 @@ class SeedHypervisorHostUpgrade(KayobeAnsibleMixin, VaultMixin, Command):
 
 
 class SeedVMProvision(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                      Command):
+                      KayobeCommand):
     """Provision the seed VM.
 
     * Allocate IP addresses for all configured networks.
@@ -392,7 +406,7 @@ class SeedVMProvision(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
 
 
 class SeedVMDeprovision(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                        Command):
+                        KayobeCommand):
     """Deprovision the seed VM.
 
     This will destroy the seed VM and all associated volumes.
@@ -405,7 +419,7 @@ class SeedVMDeprovision(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
 
 
 class SeedHostConfigure(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                        Command):
+                        KayobeCommand):
     """Configure the seed node host OS and services.
 
     * Allocate IP addresses for all configured networks.
@@ -512,7 +526,7 @@ class SeedHostConfigure(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
                                   extra_vars=extra_vars, limit="seed")
 
 
-class SeedHostPackageUpdate(KayobeAnsibleMixin, VaultMixin, Command):
+class SeedHostPackageUpdate(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Update packages on the seed host."""
 
     def get_parser(self, prog_name):
@@ -537,7 +551,7 @@ class SeedHostPackageUpdate(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class SeedHostCommandRun(KayobeAnsibleMixin, VaultMixin, Command):
+class SeedHostCommandRun(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Run command on the seed host."""
 
     def get_parser(self, prog_name):
@@ -557,7 +571,7 @@ class SeedHostCommandRun(KayobeAnsibleMixin, VaultMixin, Command):
 
 
 class SeedHostUpgrade(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                      Command):
+                      KayobeCommand):
     """Upgrade the seed host services.
 
     Performs the changes necessary to make the host services suitable for the
@@ -572,7 +586,7 @@ class SeedHostUpgrade(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
 
 
 class SeedServiceDeploy(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                        Command):
+                        KayobeCommand):
     """Deploy the seed services.
 
     * Configures kolla-ansible.
@@ -604,7 +618,7 @@ class SeedServiceDeploy(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
 
 
 class SeedServiceUpgrade(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                         Command):
+                         KayobeCommand):
     """Upgrade the seed services.
 
     * Configures kolla-ansible.
@@ -638,7 +652,7 @@ class SeedServiceUpgrade(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class SeedContainerImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
+class SeedContainerImageBuild(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Build the seed container images.
 
     * Installs and configures kolla build environment on the seed.
@@ -673,7 +687,7 @@ class SeedContainerImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class SeedDeploymentImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
+class SeedDeploymentImageBuild(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Build the seed deployment kernel and ramdisk images.
 
     Builds Ironic Python Agent (IPA) deployment images using Diskimage Builder
@@ -698,7 +712,8 @@ class SeedDeploymentImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class OvercloudInventoryDiscover(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudInventoryDiscover(KayobeAnsibleMixin, VaultMixin,
+                                 KayobeCommand):
     """Discover the overcloud inventory from the seed's Ironic service.
 
     * Query the ironic inventory on the seed, and use this to populate kayobe's
@@ -723,7 +738,8 @@ class OvercloudInventoryDiscover(KayobeAnsibleMixin, VaultMixin, Command):
             "kolla-ansible"), tags="config")
 
 
-class OvercloudIntrospectionDataSave(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudIntrospectionDataSave(KayobeAnsibleMixin, VaultMixin,
+                                     KayobeCommand):
     """Save hardware introspection data for the overcloud.
 
     Save hardware introspection data from the seed's ironic inspector service
@@ -757,7 +773,8 @@ class OvercloudIntrospectionDataSave(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class OvercloudBIOSRAIDConfigure(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudBIOSRAIDConfigure(KayobeAnsibleMixin, VaultMixin,
+                                 KayobeCommand):
     """Configure BIOS and RAID for the overcloud hosts."""
 
     def take_action(self, parsed_args):
@@ -766,7 +783,7 @@ class OvercloudBIOSRAIDConfigure(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class OvercloudHardwareInspect(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudHardwareInspect(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Inspect the overcloud hardware using ironic inspector.
 
     Perform hardware inspection of existing ironic nodes in the seed's
@@ -780,7 +797,7 @@ class OvercloudHardwareInspect(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class OvercloudProvision(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudProvision(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Provision the overcloud.
 
     Provision the overcloud hosts using the seed host's bifrost service. This
@@ -795,7 +812,7 @@ class OvercloudProvision(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class OvercloudDeprovision(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudDeprovision(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Deprovision the overcloud.
 
     Deprovision the overcloud hosts using the seed host's bifrost service. This
@@ -810,7 +827,7 @@ class OvercloudDeprovision(KayobeAnsibleMixin, VaultMixin, Command):
 
 
 class OvercloudHostConfigure(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                             Command):
+                             KayobeCommand):
     """Configure the overcloud host OS and services.
 
     * Allocate IP addresses for all configured networks.
@@ -911,7 +928,8 @@ class OvercloudHostConfigure(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
                                   extra_vars=extra_vars, limit="overcloud")
 
 
-class OvercloudHostPackageUpdate(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudHostPackageUpdate(KayobeAnsibleMixin, VaultMixin,
+                                 KayobeCommand):
     """Update packages on the overcloud hosts."""
 
     def get_parser(self, prog_name):
@@ -936,7 +954,7 @@ class OvercloudHostPackageUpdate(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class OvercloudHostCommandRun(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudHostCommandRun(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Run command on the overcloud host."""
 
     def get_parser(self, prog_name):
@@ -955,7 +973,7 @@ class OvercloudHostCommandRun(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class OvercloudHostUpgrade(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudHostUpgrade(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Upgrade the overcloud host services.
 
     Performs the changes necessary to make the host services suitable for the
@@ -972,7 +990,7 @@ class OvercloudHostUpgrade(KayobeAnsibleMixin, VaultMixin, Command):
 
 class OvercloudServiceConfigurationGenerate(KayobeAnsibleMixin,
                                             KollaAnsibleMixin, VaultMixin,
-                                            Command):
+                                            KayobeCommand):
     """Generate the overcloud service configuration files.
 
     Generates kolla-ansible configuration for the OpenStack control plane
@@ -1017,7 +1035,7 @@ class OvercloudServiceConfigurationGenerate(KayobeAnsibleMixin,
 
 
 class OvercloudServiceConfigurationSave(KayobeAnsibleMixin, VaultMixin,
-                                        Command):
+                                        KayobeCommand):
     """Gather and save the overcloud service configuration files.
 
     This can be used to collect the running configuration for inspection (the
@@ -1061,7 +1079,7 @@ class OvercloudServiceConfigurationSave(KayobeAnsibleMixin, VaultMixin,
 
 
 class OvercloudServiceDeploy(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
-                             Command):
+                             KayobeCommand):
     """Deploy the overcloud services.
 
     * Configure kolla-ansible.
@@ -1118,7 +1136,7 @@ class OvercloudServiceDeploy(KollaAnsibleMixin, KayobeAnsibleMixin, VaultMixin,
 
 
 class OvercloudServiceReconfigure(KollaAnsibleMixin, KayobeAnsibleMixin,
-                                  VaultMixin, Command):
+                                  VaultMixin, KayobeCommand):
     """Reconfigure the overcloud services.
 
     * Configure kolla-ansible.
@@ -1175,7 +1193,7 @@ class OvercloudServiceReconfigure(KollaAnsibleMixin, KayobeAnsibleMixin,
 
 
 class OvercloudServiceUpgrade(KollaAnsibleMixin, KayobeAnsibleMixin,
-                              VaultMixin, Command):
+                              VaultMixin, KayobeCommand):
     """Upgrade the overcloud services.
 
     * Configure kolla-ansible.
@@ -1218,7 +1236,7 @@ class OvercloudServiceUpgrade(KollaAnsibleMixin, KayobeAnsibleMixin,
 
 
 class OvercloudServiceDestroy(KollaAnsibleMixin, KayobeAnsibleMixin,
-                              VaultMixin, Command):
+                              VaultMixin, KayobeCommand):
     """Destroy the overcloud services.
 
     Permanently destroy the overcloud containers, container images, and
@@ -1264,7 +1282,7 @@ class OvercloudServiceDestroy(KollaAnsibleMixin, KayobeAnsibleMixin,
 
 
 class OvercloudContainerImagePull(KayobeAnsibleMixin, KollaAnsibleMixin,
-                                  VaultMixin, Command):
+                                  VaultMixin, KayobeCommand):
     """Pull the overcloud container images from a registry."""
 
     def take_action(self, parsed_args):
@@ -1284,7 +1302,8 @@ class OvercloudContainerImagePull(KayobeAnsibleMixin, KollaAnsibleMixin,
                                   extra_vars=extra_vars, limit="overcloud")
 
 
-class OvercloudContainerImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudContainerImageBuild(KayobeAnsibleMixin, VaultMixin,
+                                   KayobeCommand):
     """Build the overcloud container images."""
 
     def get_parser(self, prog_name):
@@ -1315,7 +1334,8 @@ class OvercloudContainerImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class OvercloudDeploymentImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudDeploymentImageBuild(KayobeAnsibleMixin, VaultMixin,
+                                    KayobeCommand):
     """Build the overcloud deployment kernel and ramdisk images."""
 
     def get_parser(self, prog_name):
@@ -1336,7 +1356,7 @@ class OvercloudDeploymentImageBuild(KayobeAnsibleMixin, VaultMixin, Command):
                                   extra_vars=extra_vars)
 
 
-class OvercloudPostConfigure(KayobeAnsibleMixin, VaultMixin, Command):
+class OvercloudPostConfigure(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Perform post-deployment configuration.
 
     * Register Ironic Python Agent (IPA) deployment images using Diskimage
@@ -1358,7 +1378,7 @@ class OvercloudPostConfigure(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class NetworkConnectivityCheck(KayobeAnsibleMixin, VaultMixin, Command):
+class NetworkConnectivityCheck(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Check network connectivity between hosts in the control plane.
 
     Checks for access to an external IP address, an external hostname, any
@@ -1372,7 +1392,7 @@ class NetworkConnectivityCheck(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class BaremetalComputeInspect(KayobeAnsibleMixin, VaultMixin, Command):
+class BaremetalComputeInspect(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Perform hardware inspection on baremetal compute nodes."""
 
     def take_action(self, parsed_args):
@@ -1382,7 +1402,7 @@ class BaremetalComputeInspect(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class BaremetalComputeManage(KayobeAnsibleMixin, VaultMixin, Command):
+class BaremetalComputeManage(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Put baremetal compute nodes into the manageable provision state."""
 
     def take_action(self, parsed_args):
@@ -1391,7 +1411,7 @@ class BaremetalComputeManage(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class BaremetalComputeProvide(KayobeAnsibleMixin, VaultMixin, Command):
+class BaremetalComputeProvide(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Put baremetal compute nodes into the available provision state."""
 
     def take_action(self, parsed_args):
@@ -1400,7 +1420,7 @@ class BaremetalComputeProvide(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
-class BaremetalComputeRename(KayobeAnsibleMixin, VaultMixin, Command):
+class BaremetalComputeRename(KayobeAnsibleMixin, VaultMixin, KayobeCommand):
     """Rename baremetal compute nodes to match inventory hostname"""
 
     def take_action(self, parsed_args):
@@ -1409,9 +1429,9 @@ class BaremetalComputeRename(KayobeAnsibleMixin, VaultMixin, Command):
         self.run_kayobe_playbooks(parsed_args, playbooks)
 
 
+@six.add_metaclass(ABCMeta)
 class BaremetalComputeSerialConsoleBase(KayobeAnsibleMixin, VaultMixin,
-                                        Command):
-
+                                        KayobeCommand):
     """Base class for the baremetal serial console commands"""
 
     @staticmethod
@@ -1461,7 +1481,7 @@ class BaremetalComputeSerialConsoleDisable(BaremetalComputeSerialConsoleBase):
 
 
 class BaremetalComputeUpdateDeploymentImage(KayobeAnsibleMixin, VaultMixin,
-                                            Command):
+                                            KayobeCommand):
     """Update the Ironic nodes to use the new  kernel and ramdisk images."""
 
     def get_parser(self, prog_name):

@@ -11,7 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-
+import argparse
 import base64
 import glob
 import logging
@@ -27,6 +27,8 @@ LOG = logging.getLogger(__name__)
 
 _SHARE_PATH = os.path.join(sys.prefix, "share", "kayobe")
 _BIN_PATH = os.path.join(sys.prefix, "bin")
+
+AUTOENV_PATH_ENV = "KAYOBE_AUTOENV_PATH"
 
 
 def get_data_files_path(*relative_path):
@@ -188,8 +190,28 @@ def escape_jinja(string):
     return ''.join(('{{', "'", b64_value.decode(), "' | b64decode ", '}}'))
 
 
+def get_default_env_path():
+    """Returns the default path to the kayobe environment file"""
+    env_path = resolve_egg_link('kayobe-config')
+    if not env_path:
+        env_path = "/etc/kayobe"
+    env_path = os.path.join(env_path, "kayobe-env")
+    return env_path
+
+
+def add_common_parser_arguments(parser):
+    """Adds common arguments to the parser"""
+    default_env_path = get_default_env_path()
+    parser.add_argument("--env-path", default=default_env_path,
+                        help="Path to Kayobe environment file. "
+                             "(default=$%s or %s)" %
+                        (AUTOENV_PATH_ENV, default_env_path))
+
+
 def setup_env():
-    """If the environmental variable: KAYOBE_DISABLE_ENV_AUTODETECT is not
+    """Sources the kayobe-env environment file
+
+    If the environmental variable: KAYOBE_DISABLE_AUTOENV is not
     set, this will attempt to detect the location of kayobe-config from the
     egg-link and source the environment setup script (kayobe-env).
 
@@ -197,11 +219,11 @@ def setup_env():
 
     """
 
-    if "KAYOBE_DISABLE_ENV_AUTODETECT" not in os.environ:
-        env_path = resolve_egg_link('kayobe-config')
-        if not env_path:
-            env_path = "/etc/kayobe"
-        env_path = os.path.join(env_path, "kayobe-env")
+    if "KAYOBE_DISABLE_AUTOENV" not in os.environ:
+        parser = argparse.ArgumentParser()
+        add_common_parser_arguments(parser)
+        args, _ = parser.parse_known_args(sys.argv)
+        env_path = args.env_path
         script_path = resolve_egg_link('kayobe')
         if script_path:
             script_path = os.path.join(script_path, "bin")

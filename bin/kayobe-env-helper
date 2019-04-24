@@ -26,9 +26,11 @@ if [ "$#" -lt "2" ]; then
 fi
 
 function main {
-    export KAYOBE_DISABLE_ENV_AUTODETECT=True
+    export KAYOBE_DISABLE_AUTOENV=True
 
-    source "$1" > /dev/null 2>&1
+    if [ -f "$1" ]; then
+        source "$1" > /dev/null 2>&1
+    fi
     shift
     exec $@
 }
