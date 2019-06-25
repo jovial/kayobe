@@ -7,9 +7,23 @@
 {# Configure all ethernet interfaces first, then configure VLAN interfaces #}
 {# which may depend on them. #}
 
+
+{% for interface, config in dell_switch_interface_config.items() %}
+{% if 'port-channel' in interface %}
+interface {{ interface }}
+{% if config.description is defined %}
+ description {{ config.description }}
+{% endif %}
+{% for line in config.config %}
+ {{ line }}
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+
 {% for interface, config in
 dell_switch_interface_config.items() %}
-{% if 'vlan' not in interface %}
+{% if 'vlan' not in interface and 'port-channel' not in interface %}
  interface {{ interface }}
 {% if config.description is defined %}
  description {{ config.description }}
@@ -22,7 +36,7 @@ dell_switch_interface_config.items() %}
 {% endfor %}
 
 {% for interface, config in dell_switch_interface_config.items() %}
-{% if 'vlan' in interface %}
+{% if 'vlan' in interface and 'port-channel' not in interface %}
 interface {{ interface }}
 {% if config.description is defined %}
  description {{ config.description }}
